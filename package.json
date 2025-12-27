@@ -7,10 +7,15 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,md}\""
+    "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,md}\"",
+    "sanity": "cd sanity-studio && npx sanity start"
   },
   "dependencies": {
     "@emailjs/browser": "^4.4.1",
+    "@portabletext/react": "^4.0.3",
+    "@sanity/client": "^7.13.2",
+    "@sanity/image-url": "^2.0.2",
+    "@sanity/vision": "^5.1.0",
     "aos": "^2.3.4",
     "framer-motion": "^12.23.24",
     "gsap": "^3.13.0",
@@ -19,7 +24,8 @@
     "react-dom": "^18.2.0",
     "react-helmet-async": "^2.0.5",
     "react-icons": "^5.5.0",
-    "react-router-dom": "^7.9.4"
+    "react-router-dom": "^7.9.4",
+    "sanity": "^5.1.0"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^5.0.0",

@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { FaBookOpen } from 'react-icons/fa';
 import { Helmet } from 'react-helmet-async';
+import { getAllBlogPosts } from '../lib/sanity';
 
-// All blog posts removed — keep array empty until new posts are added or fetched from a CMS
-const allBlogPosts = [
+// Fallback blog posts (used if Sanity is not configured)
+const fallbackBlogPosts = [
   {
     id: 1,
     title: 'Why PPC is the fastest way to drive conversions for your Business',
@@ -99,13 +100,58 @@ const allBlogPosts = [
 ];
 
 export default function Blog() {
+  const [allBlogPosts, setAllBlogPosts] = useState(fallbackBlogPosts);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const postsPerPage = 4;
+
+  // Fetch blog posts from Sanity
+  useEffect(() => {
+    async function fetchPosts() {
+      try {
+        setLoading(true);
+        const posts = await getAllBlogPosts();
+        
+        // If we got posts from Sanity, use them
+        if (posts && posts.length > 0) {
+          // Transform Sanity posts to match our component structure
+          const transformedPosts = posts.map((post) => ({
+            id: post._id,
+            title: post.title,
+            excerpt: post.excerpt,
+            category: post.category,
+            readTime: post.readTime,
+            date: new Date(post.publishedAt).toLocaleDateString('en-US', {
+              year: 'numeric',
+              month: 'short',
+              day: 'numeric',
+            }),
+            image: post.mainImage,
+            slug: post.slug.current,
+            authorName: post.authorName,
+            authorImage: post.authorImage,
+            authorTitle: post.authorTitle,
+          }));
+          setAllBlogPosts(transformedPosts);
+        }
+        // If no posts from Sanity, keep using fallback posts
+        setLoading(false);
+      } catch (err) {
+        console.warn('Sanity not configured yet, using fallback posts:', err.message);
+        // Keep using fallback posts
+        setAllBlogPosts(fallbackBlogPosts);
+        setLoading(false);
+      }
+    }
+
+    fetchPosts();
+  }, []);
+
   // Scroll to top on component mount
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
-
-  const [currentPage, setCurrentPage] = useState(1);
-  const postsPerPage = 4;
 
   // Calculate pagination
   const indexOfLastPost = currentPage * postsPerPage;
@@ -113,6 +159,7 @@ export default function Blog() {
   const currentPosts = allBlogPosts.slice(indexOfFirstPost, indexOfLastPost);
   const totalPages = Math.ceil(allBlogPosts.length / postsPerPage);
   const pageNumbers = Array.from({ length: totalPages }, (_, i) => i + 1);
+
   return (
     <>
       <Helmet>
@@ -148,9 +195,15 @@ export default function Blog() {
             </h2>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8">
-              {currentPosts.length > 0 ? (
+              {loading ? (
+                <div className="col-span-1 md:col-span-2 text-center py-20">
+                  <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+                  <p className="text-xl text-gray-600 mt-4">Loading blog posts...</p>
+                </div>
+              ) : currentPosts.length > 0 ? (
                 currentPosts.map((post, index) => {
-                  const slug = post.title
+                  // Use slug from post data, or generate from title as fallback
+                  const slug = post.slug || post.title
                     .toLowerCase()
                     .replace(/[^a-z0-9]+/g, '-')
                     .replace(/^-+|-+$/g, '');
